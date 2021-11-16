@@ -6,10 +6,7 @@ Using four cohort datasets: 1958, British Cohort Study 1970, British Household P
 
 **Project Plans:** 
 
-	- Use existing large-scale social survey data resources to develop new youth data resources 
-	- Work will seek to understand historical changes in youth transitions through comparative cohort analyses and through detailed empirical analyses documenting the patterns and trends in youth transitions during the closing decades of the twentieth century and the opening decades of the twenty-first century 
-	- Provide a detailed empirical understanding of youth transitions that is theoretically informed by the conception of a life course perspective, and contribute to the wider understanding of the social processes that underpin social reproduction and the transmission of social inequalities 
-	- Provide an evidence base that will inform the development of policy, especially in the fields of education and employment 
+By using existing large-scale social survey data resources to develop new youth data resources this work will seek to understand historical changes in youth transitions through comparative cohort analyses and through detailed empirical analyses documenting the patterns and trends in youth transitions during the closing decades of the twentieth century and the opening decades of the twenty-first century. In doing so, this project will provide a detailed empirical understanding of youth transitions that is theoretically informed by the conception of a life course perspective, and contribute to the wider understanding of the social processes that underpin social reproduction and the transmission of social inequalities. Finally this project will provide an evidence base that will inform the development of policy, especially in the fields of education and employment 
 
 **Research Questions to keep in mind:**
 
