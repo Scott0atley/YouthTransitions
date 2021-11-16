@@ -22,4 +22,4 @@ A focus upon traditionally defined Youth Transitions:
 		○ The second is termed a 'housing transition' meaning that the young person leaves the family home and sets up a place of their own 
 		○ Lastly a young person underwent a 'family transition' in which form a relationship, get engaged, then married, and upon marriage leaving home to live with their spouse. 
 	- All of these transitions are interconnected. School-to-work leads to the ability to leave the family home which allows for the establishment of a family of your own
-![image](https://user-images.githubusercontent.com/94450344/141974858-c4c79e7d-0845-4a77-96cc-7ea21f9c30be.png)
+
