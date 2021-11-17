@@ -21,7 +21,9 @@ Scott Oatley
 **Research Questions of My Study**
 
 RQ1= What are the patterns of social inequality in school-to-work transitions?
+
 RQ2= What are the patterns of social inequality in housing transitions?
+
 RQ3= What are the patterns of social inequality in family transitions?
 
 **Hypotheses of My Study**
