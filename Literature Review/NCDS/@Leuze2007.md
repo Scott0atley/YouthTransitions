@@ -1,0 +1,42 @@
+# What Makes for a Good Start? Consequences of Occupation-Specific Higher Education for Career Mobility: Germany and Great Britain Compared
+#### (2007) - Kathrin Leuze
+**Journal**: International Journal of Sociology
+**Link**:: https://www.tandfonline.com/doi/full/10.2753/IJS0020-7659370202
+**DOI**:: 10.2753/IJS0020-7659370202
+**Links**:: 
+**Tags**:: #paper #NCDS #Mobility #LabourMarket #BCS 
+**Cite Key**:: [@Leuze2007]
+
+### Abstract
+
+```
+Previous research on graduate employment points to cross-national similarities regarding the comparative advantage of higher education, but also to quality differences in initial employment positions. This article asks what makes for a good start after higher education and provides an institutional perspective on the specific “production mechanisms” of graduate career mobility in different countries. It argues that the occupational specificity of higher education is vital for establishing either a close or loose link to the labor market, and, accordingly, for shaping early labor market careers. To test this assumption empirically, it analyzes how the organization of professional and management training influences graduate career mobility in two countries that are significantly different in their degree of occupational specificity—Great Britain and Germany. The institutional analysis points to a tight link between higher education and work in Germany and a loose one in Britain. However, the application of discrete time piece-wise constant hazard models to the German Socioeconomic Panel and two British cohort studies (the National Child Development Study and the British Cohort Study 1970) reveals that the picture is more complex than initially assumed. The degree of occupational specificity can explain only the German pattern, where graduates are experiencing more job continuity and higher employment chances in professional and managerial positions than their British counterparts. In Britain, the more turbulent transition from higher education to work depends on a mixture of occupation-specific training and demographic factors.
+```
+
+### Notes
+
+“This article asks what makes for a good start after higher education and provides an institutional perspective on the specific “production mechanisms” of graduate career mobility in different countries.” (Leuze, 2007, p. 29)
+
+“t argues that the occupational specificity of higher education is vital for establishing either a close or loose link to the labor market, and, accordingly, for shaping early labor market careers.” (Leuze, 2007, p. 29)
+
+“he institutional analysis points to a tight link between higher education and work in Germany and a loose one in Britain.” (Leuze, 2007, p. 29)
+
+“ignificantly increasing numbers of students in combination with tightening labor market conditions since the 1970s have given rise to a widespread fear of educating an overqualified “academic proletariat.”” (Leuze, 2007, p. 30) Lol
+
+“In both countries it takes less than half a year to find a first job, and almost 90 percent of a graduation cohort is employed four years after graduation.” (Leuze, 2007, p. 30) Interesting. I should defo talk about how quickly it takes someone to enter into a first job.
+
+“substantial proportion of British graduates are employed as clerks, low-level sales personnel, or manual workers, that is, in positions that are generally considered as unsuitable for people holding a higher education degree.” (Leuze, 2007, p. 30) Would also be great to look into what types of jobs these first jobs actually are. This could add a qualitative aspect to the work rather than simply looking at quant numbers of people in work.
+
+“the proportion of those who do not see a match between their field of study and their area of work is almost twice as high in Britain (27 percent)” (Leuze, 2007, p. 30)
+
+“The economic job-matching theory (Jovanovic 1979; Sattinger 1993) stresses that a good labor market match not only is the result of an employee’s adequate education and experience but also depends on job characteristics and employer preferences.” (Leuze, 2007, p. 32)
+
+“Career mobility takes place because employers and employees are interested in finding an optimal match and accordingly try to readjust the assignment until this has been achieved” (Leuze, 2007, p. 32)
+
+“wo basic types of institutional contexts can be distinguished (see Allmendinger 1989; Kerckhoff 2001; Marsden 1990; Maurice, Sellier, and Silvestre 1986; Müller and Shavit 1998): (1) a more occupationalized one, operating in countries like Germany, where young people are trained predominantly within a standardized apprenticeship system and from there onward experience rather smooth trajectories into the labor market; and (2) a more organization-based system that exists in Anglo-Saxon countries, where universal and comprehensive education without institutionalized vocational training leads to a more turbulent labor-market integration marked by a sequence of stop-gap jobs.” (Leuze, 2007, p. 32)
+
+“CASMIN is a certificate-oriented classification schema that is extremely useful in comparative stratification and labor market research. It distinguishes educational credentials hierarchically (length, quality, and value of education), and whether the credentials imply general or vocationally oriented education (for more details see König, Lüttinger, and Müller 1988; Shavit and Müller 1998).” (Leuze, 2007, p. 39)
+
+“The transition from higher education to work is analyzed by estimating discrete time piece-wise constant exponential models with event history analysis (Blossfeld and Rohwer 1995; Jenkins 2004).” (Leuze, 2007, p. 39)
+
+“In Britain, the likelihood of ending up in the upper professional and service sector is comparatively low for the majority and takes much longer than in Germany, due to the loose linkage between higher education and the labor market.” (Leuze, 2007, p. 48)
