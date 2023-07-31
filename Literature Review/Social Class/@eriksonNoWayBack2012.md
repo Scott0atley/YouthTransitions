@@ -1,0 +1,28 @@
+# No way back up from ratcheting down? A critique of the ‘Microclass’ approach to the analysis of social mobility
+#### (2012) - Robert Erikson, John H. Goldthorpe, Martin Hällsten
+**Journal**: Acta Sociologica
+**Link**:: http://journals.sagepub.com/doi/10.1177/0001699312447633
+**DOI**:: 10.1177/0001699312447633
+**Links**:: 
+**Tags**:: #paper #SocialClass #MicroClass 
+**Cite Key**:: [@eriksonNoWayBack2012]
+
+### Abstract
+
+```
+‘Microclasses’, detailed occupational groups, have recently been suggested as being the basis of research in social stratification; occupations represent ‘real’ social groups in contrast to the purely ‘nominal’ categories of either ‘big class’ schemata or socio-economic status scales. The microclass approach in social mobility research has been applied in a recent paper, the authors claiming to show that a strong propensity exists for intergenerational occupational inheritance, and that such inheritance is the dominant factor in social reproduction and limits equality of opportunity. We model a larger version of the same Swedish dataset as used by these authors. We show: (i) that while with many occupational groups a marked degree of intergenerational inheritance occurs among men, such inheritance is far less apparent among women, and, for both men and women, accounts for less than half of the total association in the occupational mobility table; (ii) that the microclass approach does not deal in a theoretically consistent way with the remaining associational underlying patterns of occupational mobility, since appeal is made to the theoretically alien idea of ‘socio-economic closeness’; and (iii) that a standard class approach, modified to account for occupational inheritance, can provide a more integrated understanding of patterns of immobility and mobility alike. We also give reasons for doubting whether it will prove possible to establish a theoretically consistent microclass approach to explaining intergenerational mobility propensities. Finally, on the basis of our empirical results and of the relevant philosophical literature, we argue that the microclass approach is unlikely to be helpful in addressing normative questions of equality of opportunity.
+```
+
+### Notes
+
+“We show (i) that while with many occupational groups a marked degree of intergenerational inheritance occurs among men, such inheritance is far less apparent among women, and, for both men and women, accounts for less than half of the total association in the occupational mobility table; (ii) that the microclass approach does not deal in a theoretically consistent way with the remaining association underlying patterns of occupational mobility since appeal is made to the theoretically alien idea of ‘socioeconomic closeness’; and (iii) that a standard class approach, modified to account for occupational inheritance, can provide a more integrated understanding of patterns of immobility and mobility alike. We also give reasons for doubting if it will prove possible to establish a theoretically consistent microclass approach to explaining intergenerational mobility propensities.” (Erikson et al., 2012, p. 2)
+
+“In order for class analysts to overcome this problem and to move towards more ‘realist’ concepts of class, the level of analysis needs to be ’ratcheted down’ to that of detailed occupational groups, occupying specific niches within the division of labour and understood, from a neo-Durkheimian standpoint, as ‘microclasses’. For it is only at this level that individuals are brought together at ‘the site of production’, through processes of selection (including selfselection) and socialization, into collectivities with which they can identify and which create among them a sense of a shared way of life and shared interests.” (Erikson et al., 2012, p. 3)
+
+“Two rival approaches have for long been established in the field of social mobility research: the ‘gradational’ approach that sees mobility as occurring within a continuous social hierarchy, typically, one of socioeconomic status; and the ‘class’ approach that sees mobility as occurring within a discontinuous class structure” (Erikson et al., 2012, p. 4)
+
+“What is overlooked, they maintain, is that it is only at the occupational, or microclass, level that certain mechanisms operate that are crucial to processes of ‘social reproduction’: in particular, the intergenerational transmission of ‘occupation-specific’ human, cultural and social capital and various more institutionalized forms of ‘social closure’.” (Erikson et al., 2012, p. 4)
+
+“They focus on ‘social reproduction’ - i.e. on immobility - and in this regard, as we recognize, they have one good point to make, even if they exaggerate its quantitative importance and especially in regard to women: namely, that at the level of occupations quite strong propensities for inheritance may exist, so that some part of what in the standard class approach would be treated as class immobility in fact results from occupation-specific rather than from class-wide effects.” (Erikson et al., 2012, p. 23)
+
+“The class approach to mobility research that we would ourselves favour - and likewise the gradational approach - aim to model propensities for both immobility and mobility simultaneously and on the same theoretical basis. However, while within their proposed new approach JGDPB have developed a theoretical basis for understanding immobility at least to some extent - i.e. in terms of occupationally specific resources, occupational closure etc. - they have not shown how their approach might be extended to the treatment of mobility as distinct from immobility” (Erikson et al., 2012, p. 24)
