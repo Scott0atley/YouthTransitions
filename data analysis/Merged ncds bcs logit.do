@@ -65,13 +65,13 @@ label value econ201 econ_lbl
 tab econ201
 
 gen econbin = . 
-replace econbin=0 if (econ201==3)
-replace econbin=1 if (econ201==1)
-replace econbin=1 if (econ201==2)
-replace econbin=1 if (econ201==4)
-replace econbin=1 if (econ201==5)
+replace econbin=1 if (econ201==3)
+replace econbin=0 if (econ201==1)
+replace econbin=0 if (econ201==2)
+replace econbin=0 if (econ201==4)
+replace econbin=0 if (econ201==5)
 
-label define econbin_lbl 0"Continue Schooling" 1"Don't Contine Schooling"
+label define econbin_lbl 1"Continue Schooling" 0"Don't Contine Schooling"
 label values econbin econbin_lbl
 
 gen olevel=.
@@ -1347,8 +1347,8 @@ cd"G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One"
 
 collect clear
 
-table (var) (), statistic(fvfrequency econ201 econbin obin sex tenure nssec nssec90 rgsc rgsc90) ///
-					statistic(fvpercent econ201 econbin obin sex tenure nssec nssec90 rgsc rgsc90) ///
+table (var) (), statistic(fvfrequency econbin obin sex tenure nssec nssec90 rgsc rgsc90) ///
+					statistic(fvpercent econbin obin sex tenure nssec nssec90 rgsc rgsc90) ///
 					statistic(mean camsis cam90) ///  
 					statistic(sd camsis cam90) 			
 collect remap result[fvfrequency mean] = Col[1 1] 
@@ -1361,8 +1361,7 @@ collect get empty = "  ", tag(Col[1] var[empty])
 count
 	collect get n = `r(N)', tag(Col[2] var[n])
 	
-collect layout (var[1.econ201 2.econ201 3.econ201 4.econ201 5.econ201 ///
-					0.econbin 1.econbin ///
+collect layout (var[0.econbin 1.econbin ///
 					0.obin 1.obin ///
 					0.sex 1.sex  ///
 					0.tenure 1.tenure ///
@@ -1379,8 +1378,8 @@ collect label levels Col 1 "n" 2 "%"
 collect style header Col, title(hide)
 collect style header var[empty mylabel], level(hide)
 collect style row stack, nobinder
-collect style cell var[econ201 econbin obin sex tenure nssec nssec90 rgsc rgsc90]#Col[1], nformat(%6.0fc) 
-collect style cell var[econ201 econbin obin sex tenure nssec nssec90 rgsc rgsc90]#Col[2], nformat(%6.2f) sformat("%s%%") 	
+collect style cell var [econbin obin sex tenure nssec nssec90 rgsc rgsc90]#Col[1], nformat(%6.0fc) 
+collect style cell var[econbin obin sex tenure nssec nssec90 rgsc rgsc90]#Col[2], nformat(%6.2f) sformat("%s%%") 	
 collect style cell var[camsis cam90], nformat(%6.2f)
 collect style cell border_block[item row-header], border(top, pattern(nil)) 
 collect title "Table 1: Descriptive Statistics for Economic Activity"
@@ -1392,7 +1391,6 @@ collect export "Table1.docx", replace
 
 dtable i.obin i.sex i.tenure i.nssec i.rgsc i.nssec90 i.rgsc90 camsis cam90, by(econbin) nformat(%6.2fc) title(Descriptive Statistics by Economic Activity) export("Table2a", as(docx) replace)
 
-dtable i.obin i.sex i.tenure i.nssec i.rgsc i.nssec90 i.rgsc90 camsis cam90, by(econ201) nformat(%6.2fc) title(Descriptive Statistics by Economic Activity) export("Table2b", as(docx) replace)
 
 dtable i.nssec, by(nssec90) nformat(%6.2fc) title(Descriptive Statistics comparing NS-SEC by SOC2000 and SOC90 codes) export("Table3", as(docx) replace)
 
@@ -1403,59 +1401,63 @@ summarize camsis, detail
 summarize cam90, detail
 
 
-
-
-logit econbin
-
-logit econbin i.obin
-
-fitstat
+glm econbin, family(binomial) link(logit)
 estat ic
 
-logit econbin i.sex
+logit econbin i.obin
+estat ic
+fitstat
 
+logit econbin i.sex
 fitstat
 estat ic
 
 logit econbin i.tenure
-
 fitstat
 estat ic
 
 logit econbin ib(3).nssec
-
 fitstat
 estat ic
 
+logit econbin ib(2).rgsc
+fitstat
+estat ic
+
+logit econbin camsis
+fitstat
+estat ic
 
 
 quietly logit econbin
 
-
 quietly logit econbin i.obin
-
 fitstat
 estat ic
 
 quietly logit econbin i.obin i.sex
-
 fitstat
 estat ic
 
 quietly logit econbin i.obin i.sex i.tenure
-
 fitstat
 estat ic
 
 quietly logit econbin i.obin i.sex i.tenure ib(3).nssec
+fitstat
+estat ic
 
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc
+fitstat
+estat ic
+
+quietly logit econbin i.obin i.sex i.tenure camsis
 fitstat
 estat ic
 
 * to get Tjur R2
 
 predict yhatf if e(sample)
-
 
 ttest yhatf, by(econbin)
 
@@ -1489,8 +1491,20 @@ replace qvnssec=8 if(nssec==8)
 label define qvnssec_lbl 1"Lower Managerial and professional occupations" 2"Large Employers and higher managerial occupations" 3"Higher professional occupations" 4"Intermediate occupations" 5"Small employers and own account workers" 6"Lower supervisory and technical occupations" 7"Semi-routine occupations" 8"Routine occupations" 
 label values qvnssec qvnssec_lbl
 
-set scheme stcolor, permanent 
+*Graph Settings
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
 
+* graphs
 logit econbin i.obin i.sex i.tenure i.qvnssec
 
 estimates store modellogita
@@ -1592,38 +1606,63 @@ graph twoway scatter beta grouping ///
 || rspike upperbound lowerbound grouping, vert   /// 
 xlabel(1 3 5 7 9 11 13 15, valuelabel alternate )
 
-cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One"
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
 
-graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Confidence Intervals"))) || rspike quasiupper quasilower group, lcolor(red) ///
-title("Predictions of Staying in Schooling versus Not by Parental NS-SEC", size(vsmall) color(black)) ///
-subtitle("Confidence intervals of regression coefficients, by estimation method", size(vsmall) color(black)) ///
-note("Data Source: NCDS, N=8,448", size(vsmall) color(black)) ///
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental NS-SEC", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: NCDS, N=8,411", size(vsmall) color(black)) ///
 caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
-xla(1 3 5 7 9 11 13 15, valuelabel alternate )
+xtitle("NS-SEC", size(msmall)) ///
+xla(1 3 5 7 9 11 13 15, valuelabel alternate ) name(quasi1, replace)
 
-graph save "logitquasigraph", replace
+graph export "logitquasigraph.png", width(6000) replace
+
 
 *Marginal effects graphs
-
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
 
 logit econbin i.obin i.sex i.tenure i.nssec
 
-
 margins nssec, atmeans saving(file1, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, Predictive Margins", size(msmall)) xtitle("NS-SEC", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1.1" 2"1.2" 3"2" 4"3" 5"4" 6"5" 7"6" 8"7", labsize(msmall)) name(main1, replace) 
 
-marginsplot 
+margins, dydx(nssec)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, AMEs of Continuing Schooling", size(msmall)) xtitle("NS-SEC", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", labsize(msmall)) note("Reference Category NS-SEC 2", size(vsmall)) name(diff1, replace)
+
+graph combine main1 diff1, xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental NS-SEC on Continuing Schooling", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) ycommon name(comb, replace)
+
+cd"G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
+
+graph export "ncdsnssecmargins.png", width(6000) replace
+
 
 margins obin, atmeans saving(file6, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Educational Attainment, Predictive Margins", size(msmall)) xtitle("Educational Attainment", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Educational Attainment")) xlabel(0 "<5" 1 "≥5") note("Data Source: NCDS, N=8,411", size(vsmall)) caption("NS-SEC, Sex, and Housing Tenure also included in Model", size(vsmall)) name(main2, replace) 
 
-marginsplot
+graph export "ncdsobinmargins.png", width(6000) replace
 
 margins sex, atmeans saving(file11, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Sex, Predictive Margins", size(msmall)) xtitle("Sex", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Sex")) xlabel(0 "Female" 1 "Male") note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, NS-SEC, and Housing Tenure also included in Model", size(vsmall)) name(main2, replace) 
 
-marginsplot
+graph export "ncdssexmargins.png", width(6000) replace
 
 margins tenure, atmeans saving(file16, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Housing Tenure, Predictive Margins", size(msmall)) xtitle("Housing Tenure", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Housing Tenure")) xlabel(0 "Own" 1 "Don't") note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and NS-SEC also included in Model", size(vsmall)) name(main2, replace) 
 
-marginsplot
+graph export "ncdstenuremargins.png", width(6000) replace
+
 
 quietly logit econbin i.obin i.sex i.tenure ib(3).nssec
 
@@ -1633,8 +1672,6 @@ est store logitnssecccamarg
 
 etable, append
 
-
-est table logitnsseca logitnssecccamarg
 
 collect style showbase all
 
@@ -1668,6 +1705,10 @@ logit econbin i.obin i.sex i.tenure camsis
 fitstat
 estat ic
 
+predict yhatc if e(sample)
+
+ttest yhatc, by(econbin)
+
 
 logit econbin i.obin i.sex i.tenure camsis
 
@@ -1696,6 +1737,10 @@ quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc
 fitstat
 estat ic
 
+predict yhatR if e(sample)
+
+ttest yhatR, by(econbin)
+
 logit econbin i.obin i.sex i.tenure ib(2).rgsc
 
 est store logitrgsccca
@@ -1714,7 +1759,6 @@ etable, append
 
 
 
-est table logitnsseca logitcamsiscca logitrgsccca
 
 collect style showbase all
 
@@ -1736,14 +1780,1024 @@ cstat(_r_b, nformat(%4.2f))  ///
 		notestyles(font(Arial Narrow, size(10) italic)) ///
 		export("logitregressionchapterone.docx", replace)  
 
+		
+*rgsc quasi graph
+
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+gen qvrgsc=.
+replace qvrgsc=1 if(rgsc==2)
+replace qvrgsc=2 if(rgsc==1)
+replace qvrgsc=3 if(rgsc==3)
+replace qvrgsc=4 if(rgsc==4)
+replace qvrgsc=5 if(rgsc==5)
+replace qvrgsc=6 if(rgsc==6)
+
+label define qvrgsc_lbl 1"Managerial and Technical" 2"Professional" 3"Skilled non-manual" 4"Skilled manual" 5"Partly skilled" 6"Unskilled"
+label values qvrgsc qvrgsc_lbl
+
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc
+
+qv i.qvrgsc
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf quasilower
+
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group
+
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+
+label variable group "Class"
+label define regionrc 2 "1" 4 "2" 6 "3NM" 8 "3M" 10 "4" 12 "5" 
+label value group regionrc
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf lowerbound
+
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+egen lowerbound = rowtotal(lla llb llc lld lle llf)
+
+drop ula ulb ulc uld ule ulf upperbound beta
+
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+label variable grouping "Class"
+label define regionsrc 1 "1" 3 "2" 5 "3NM" 7 "3M" 9 "4" 11 "5" 
+label value grouping regionsrc
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental RGSC", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: NCDS, N=8,411", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("RGSC", size(msmall)) ///
+xla(1"1" 3"2" 5"3NM" 7"3M" 9"4" 11"5", valuelabel alternate ) name(quasi2, replace)
+
+graph export "logitquasigraphrgsc.png", width(6000) replace
+
+graph combine quasi1 quasi2, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by Parental Social Class", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasi, replace)
+
+graph export "ncdscombquasi.png", width(6000) replace
+
 
 *rgsc margins graph
 
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
 quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc
 
-margins rgsc, atmeans saving(file20, replace)
+margins rgsc, atmeans saving(file1a, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("RGSC, Predictive Margins", size(msmall)) xtitle("RGSC", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1" 2"2" 3"3NM" 4"3M" 5"4" 6"5", labsize(msmall)) name(main1a, replace) 
 
-marginsplot 
+margins, dydx(rgsc)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("RGSC, AMEs of Continuing Schooling", size(msmall)) xtitle("RGSC", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1" 2"3NM" 3"3M" 4"4" 5"5", labsize(msmall)) note("Reference Category RGSC 2", size(vsmall)) name(diff1a, replace)
+
+graph combine main1a diff1a, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental RGSC on Continuing Schooling", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb, replace)
+
+graph export "ncdsRGSCmargins.png", width(6000) replace
+
+*camsis margins graph 
+
+quietly logit econbin i.obin i.sex i.tenure camsis 
+
+margins, at(camsis =(0(1)88)) saving(file1b, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, Predictive Margins", size(msmall)) xtitle("CAMSIS", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) name(main1b, replace) 
+
+margins, dydx(camsis) at(camsis =(0(1)88))
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, AMEs of Continuing Schooling", size(msmall)) xtitle("CAMSIS", size(msmall)) ytitle("Continue Schooling", size(msmall)) name(diff1b, replace) 
+
+graph combine main1b diff1b, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental CAMSIS on Continuing Schooling", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb, replace)
+
+graph export "ncdsCAMSISmargins.png", width(6000) replace
+
+
+graph combine main1 main1a main1b diff1 diff1a diff1b, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental Social Stratification Measures on Continuing Schooling", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb, replace)
+
+graph export "ncdssocstratmargins.png", width(6000) replace
+
+
+* Sensitivity analysis of SOC measures
+
+logit econbin nssec90 
+estat ic
+fitstat
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+estat ic
+fitstat
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+est store logitnssecb
+
+etable, append 
+
+* qv stats
+
+gen qvnssec90=.
+replace qvnssec90=1 if(nssec90==3)
+replace qvnssec90=2 if(nssec90==1)
+replace qvnssec90=3 if(nssec90==2)
+replace qvnssec90=4 if(nssec90==4)
+replace qvnssec90=5 if(nssec90==5)
+replace qvnssec90=6 if(nssec90==6)
+replace qvnssec90=7 if(nssec90==7)
+replace qvnssec90=8 if(nssec90==8)
+
+
+label define qvnssec90_lbl 1"Lower Managerial and professional occupations" 2"Large Employers and higher managerial occupations" 3"Higher professional occupations" 4"Intermediate occupations" 5"Small employers and own account workers" 6"Lower supervisory and technical occupations" 7"Semi-routine occupations" 8"Routine occupations" 
+label values qvnssec90 qvnssec90_lbl
+
+*Graph Settings
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+* graphs
+logit econbin i.obin i.sex i.tenure i.qvnssec90
+
+estimates store modellogitab
+
+estimates restore modellogitab
+
+qv i.qvnssec90
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf lbg lbh quasilower
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+gen lbg=LB[7,1] if _n==14
+gen lbh=LB[8,1] if _n==16
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf lbg lbh)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf ubg ubh quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+gen ubg=UB[7,1] if _n==14
+gen ubh=UB[8,1] if _n==16
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf ubg ubh)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group 
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+replace group=_n if _n==14
+replace group=_n if _n==16
+
+label variable group "Class"
+label define regionb 2 "1.1" 4 "1.2" 6 "2" 8 "3" 10 "4" 12 "5" 14 "6" 16 "7"
+label value group regionb
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12 14 16, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvnssec90
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf llg llh lowerbound
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+gen llg=A[1,13] if _n==13
+gen llh=A[1,14] if _n==15
+egen lowerbound = rowtotal(lla llb llc lld lle llf llg llh)
+
+drop ula ulb ulc uld ule ulf ulg ulh upperbound beta
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+gen ulg=A[2,13] if _n==13
+gen ulh=A[2,14] if _n==15
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf ulg ulh)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+replace grouping=_n if _n==13
+replace grouping=_n if _n==15
+label variable grouping "Class"
+label define regionsb 1 "1.1" 3 "1.2" 5 "2" 7 "3" 9 "4" 11 "5" 13 "6" 15 "7"
+label value grouping regionsb
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11 13 15, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental NS-SEC (SOC90)", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: NCDS, N=8,411", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("NS-SEC", size(msmall)) ///
+xla(1 3 5 7 9 11 13 15, valuelabel alternate ) name(quasi1b, replace)
+
+graph export "logitquasibgraph.png", width(6000) replace
+
+
+graph combine quasi1 quasi1b, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by SOC construction of Parental NS-SEC", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasi, replace)
+
+graph export "logitquasibcombgraph.png", width(6000) replace
+
+
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+estat ic
+fitstat
+predict yhatn9 if e(sample)
+
+ttest yhatn9, by(econbin)
+
+est store logitnssecb
+etable, append 
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+margins, dydx(*) post
+est store logitnssecbmargins
+etable, append 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC 2000 Model" ///
+										2 "NS-SEC 90 Model" /// 
+										3 "NS-SEC 90 MARGINS", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchapteroneb.docx", replace)  
+		
+		
+logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+
+estat ic
+fitstat
+predict yhatn9b if e(sample)
+
+ttest yhatn9b, by(econbin)
+est store logitnssecba
+etable, append 
+
+logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+margins, dydx(*) post
+est store logitnssecbmarginsa
+etable, append 
+
+*rgsc90 graph
+*rgsc quasi graph
+
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+gen qvrgsc90=.
+replace qvrgsc90=1 if(rgsc90==2)
+replace qvrgsc90=2 if(rgsc90==1)
+replace qvrgsc90=3 if(rgsc90==3)
+replace qvrgsc90=4 if(rgsc90==4)
+replace qvrgsc90=5 if(rgsc90==5)
+replace qvrgsc90=6 if(rgsc90==6)
+
+label define qvrgsc90_lbl 1"Managerial and Technical" 2"Professional" 3"Skilled non-manual" 4"Skilled manual" 5"Partly skilled" 6"Unskilled"
+label values qvrgsc90 qvrgsc90_lbl
+
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc90
+
+qv i.qvrgsc90
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf quasilower
+
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group
+
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+
+label variable group "Class"
+label define regionrac 2 "1" 4 "2" 6 "3NM" 8 "3M" 10 "4" 12 "5" 
+label value group regionrc
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc90
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf lowerbound
+
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+egen lowerbound = rowtotal(lla llb llc lld lle llf)
+
+drop ula ulb ulc uld ule ulf upperbound beta
+
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+label variable grouping "Class"
+label define regionsrac 1 "1" 3 "2" 5 "3NM" 7 "3M" 9 "4" 11 "5" 
+label value grouping regionsrc
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental RGSC (SOC 90)", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: NCDS, N=8,411", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("RGSC", size(msmall)) ///
+xla(1"1" 3"2" 5"3NM" 7"3M" 9"4" 11"5", valuelabel alternate ) name(quasi2b, replace)
+
+graph export "logitquasigraphrgsc90.png", width(6000) replace
+
+
+graph combine quasi2 quasi2b, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by SOC construction of Parental RGSC", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasi2, replace)
+
+graph export "logitquasigraphrgsccomb.png", width(6000) replace
+
+
+*camsis 
+
+logit econbin i.obin i.sex i.tenure cam90
+estat ic 
+fitstat 
+predict yhatn9bc if e(sample)
+
+ttest yhatn9bc, by(econbin)
+
+est store logitnssecbaa
+etable, append 
+
+logit econbin i.obin i.sex i.tenure cam90
+margins, dydx(*) post
+est store logitnssecbmarginsaa
+etable, append 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC 2000 Model" ///
+										2 "NS-SEC 90 Model" /// 
+										3 "NS-SEC 90 MARGINS" ///
+										4 "rgsc90" ///
+										5 "rgsc90 margins" ///
+										6 "cam90" ///
+										7 "cam90 margins", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchapteroneba.docx", replace)  
+
+
+* margins graphs for soc90 
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
+logit econbin i.obin i.sex i.tenure i.nssec90
+margins nssec90, atmeans saving(file190, replace) post
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, Predictive Margins", size(msmall)) xtitle("NS-SEC (SOC90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1.1" 2"1.2" 3"2" 4"3" 5"4" 6"5" 7"6" 8"7", labsize(msmall)) name(main190, replace) 
+
+logit econbin i.obin i.sex i.tenure i.nssec90
+margins, dydx(nssec90)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, AMEs of Continuing Schooling", size(msmall)) xtitle("NS-SEC (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", labsize(msmall)) note("Reference Category NS-SEC 2", size(vsmall)) name(diff190, replace)
+
+graph combine main1 main190 diff1 diff190, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental NS-SEC on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: NCDS, N=8,411, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb1a, replace)
+
+cd"G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\Finished"
+
+graph export "ncdsnssecmarginscomb.png", width(6000) replace
+
+
+
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+
+margins rgsc90, atmeans saving(file1a, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("RGSC, Predictive Margins", size(msmall)) xtitle("RGSC (S0C 90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1" 2"2" 3"3NM" 4"3M" 5"4" 6"5", labsize(msmall)) name(main1ab, replace) 
+
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+margins, dydx(rgsc90)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("RGSC, AMEs of Continuing Schooling", size(msmall)) xtitle("RGSC (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1" 2"3NM" 3"3M" 4"4" 5"5", labsize(msmall)) note("Reference Category RGSC 2", size(vsmall)) name(diff1ab, replace)
+
+graph combine main1a main1ab diff1a diff1ab, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental RGSC on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: NCDS, N=8,411, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb2a, replace)
+
+graph export "ncdsRGSCmarginscomb.png", width(6000) replace
+
+*camsis margins graph 
+
+quietly logit econbin i.obin i.sex i.tenure cam90 
+
+margins, at(cam90 =(0(1)88)) saving(file1b, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, Predictive Margins", size(msmall)) xtitle("CAMSIS (SOC 90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) name(main1bb, replace) 
+
+quietly logit econbin i.obin i.sex i.tenure cam90 
+margins, dydx(cam90) at(cam90 =(0(1)88))
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, AMEs of Continuing Schooling", size(msmall)) xtitle("CAMSIS (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) name(diff1bb, replace) 
+
+graph combine main1b main1bb diff1b diff1bb, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental CAMSIS on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: NCDS, N=8,411, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb3a, replace)
+
+graph export "ncdsCAMSISmarginscomb.png", width(6000) replace
+
+
+graph combine main190 main1ab main1bb diff190 diff1ab diff1bb, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Social Stratification Measures on Continuing Schooling by SOC 90", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb4a, replace)
+
+graph export "ncdscombmarginscomb90.png", width(6000) replace
+
+
+graph combine comb comb4a, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Social Stratification Measures on Continuing Schooling by SOC 90", size(msmall)) note("Data Source: NCDS, N=8,411", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb3a, replace)
+
+
+* Missing Data, Simulation followed by real data then FIN and move to BCS* 
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One"
+
+save ncdslogit, replace
+
+use "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\ncds4_recoded"
+
+
+drop if missing(n4118)
+
+misstable summarize econbin obin sex tenure nssec 
+
+misstable patterns econbin obin sex tenure nssec
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec 
+
+gen cc= e(sample)
+
+foreach var in econbin obin sex tenure nssec {
+	tab `var' cc, col
+}
+
+tab n0region
+
+gen acatnn0region = n0region
+replace acatnn0region=. if (acatnn0region==-2)
+replace acatnn0region=0 if (acatnn0region==1)
+replace acatnn0region=1 if (acatnn0region==2)
+replace acatnn0region=1 if (acatnn0region==3)
+replace acatnn0region=1 if (acatnn0region==4)
+replace acatnn0region=1 if (acatnn0region==5)
+replace acatnn0region=1 if (acatnn0region==6)
+replace acatnn0region=1 if (acatnn0region==7)
+replace acatnn0region=1 if (acatnn0region==8)
+replace acatnn0region=1 if (acatnn0region==9)
+replace acatnn0region=1 if (acatnn0region==10)
+replace acatnn0region=1 if (acatnn0region==11)
+
+tab acatnn0region 
+
+tab n99
+
+gen bconnn99 = n99
+replace bconnn99=. if (bconnn99==-1)
+replace bconnn99=0 if (bconnn99==1)
+replace bconnn99=1 if (bconnn99==2)
+replace bconnn99=1 if (bconnn99==3)
+replace bconnn99=1 if (bconnn99==4)
+replace bconnn99=1 if (bconnn99==5)
+replace bconnn99=1 if (bconnn99==6)
+replace bconnn99=1 if (bconnn99==7)
+replace bconnn99=1 if (bconnn99==8)
+replace bconnn99=1 if (bconnn99==9)
+replace bconnn99=1 if (bconnn99==10)
+replace bconnn99=1 if (bconnn99==11)
+replace bconnn99=1 if (bconnn99==12)
+replace bconnn99=1 if (bconnn99==13)
+replace bconnn99=1 if (bconnn99==14)
+
+tab bconnn99
+
+tab n197
+
+gen maw5 = n197
+replace maw5=. if (maw5==-1)
+replace maw5=0 if (maw5==1)
+replace maw5=1 if (maw5==2)
+replace maw5=1 if (maw5==3)
+replace maw5=1 if (maw5==4)
+
+tab maw5
+
+tab n512
+
+gen aconnn512 = n512
+replace aconnn512=. if (aconnn512==-1)
+replace aconnn512=0 if (aconnn512==1)
+replace aconnn512=1 if (aconnn512==2)
+replace aconnn512=1 if (aconnn512==3)
+replace aconnn512=1 if (aconnn512==4)
+replace aconnn512=1 if (aconnn512==5)
+replace aconnn512=1 if (aconnn512==6)
+
+tab aconnn512
+
+tab n236
+
+gen acatnn236 = n236
+replace acatnn236=. if (n236==-1)
+
+tab acatnn236
+
+tab n95
+
+gen bcatnn95 = n95
+replace bcatnn95=. if (bcatnn95==-1)
+replace bcatnn95=0 if (bcatnn95==1)
+replace bcatnn95=0 if (bcatnn95==2)
+replace bcatnn95=0 if (bcatnn95==3)
+replace bcatnn95=0 if (bcatnn95==4)
+replace bcatnn95=1 if (bcatnn95==5)
+replace bcatnn95=1 if (bcatnn95==6)
+replace bcatnn95=1 if (bcatnn95==7)
+replace bcatnn95=1 if (bcatnn95==8)
+replace bcatnn95=1 if (bcatnn95==9)
+replace bcatnn95=1 if (bcatnn95==10)
+replace bcatnn95=1 if (bcatnn95==11)
+replace bcatnn95=1 if (bcatnn95==12)
+replace bcatnn95=1 if (bcatnn95==13)
+replace bcatnn95=1 if (bcatnn95==14)
+replace bcatnn95=1 if (bcatnn95==15)
+replace bcatnn95=1 if (bcatnn95==16)
+replace bcatnn95=1 if (bcatnn95==17)
+replace bcatnn95=1 if (bcatnn95==18)
+replace bcatnn95=1 if (bcatnn95==19)
+replace bcatnn95=1 if (bcatnn95==20)
+replace bcatnn95=1 if (bcatnn95==21)
+replace bcatnn95=1 if (bcatnn95==22)
+
+tab bcatnn95
+
+tab n180
+
+gen DadNeverReads = n180
+replace DadNeverReads=. if (DadNeverReads==-1)
+replace DadNeverReads=0 if (DadNeverReads==1)
+replace DadNeverReads=1 if (DadNeverReads==2)
+replace DadNeverReads=1 if (DadNeverReads==3)
+replace DadNeverReads=1 if (DadNeverReads==4)
+
+tab DadNeverReads
+
+tab n1434
+
+gen ccatnn1434 = n1434
+replace ccatnn1434=. if (ccatnn1434==-1)
+replace ccatnn1434=0 if (ccatnn1434==1)
+replace ccatnn1434=1 if (ccatnn1434==2)
+replace ccatnn1434=1 if (ccatnn1434==3)
+replace ccatnn1434=1 if (ccatnn1434==4)
+replace ccatnn1434=1 if (ccatnn1434==5)
+replace ccatnn1434=1 if (ccatnn1434==6)
+replace ccatnn1434=1 if (ccatnn1434==7)
+replace ccatnn1434=1 if (ccatnn1434==8)
+replace ccatnn1434=1 if (ccatnn1434==9)
+
+tab ccatnn1434
+
+tab n1150
+
+gen ccatnn1150 = n1150
+replace ccatnn1150=. if (ccatnn1150==-1)
+replace ccatnn1150=0 if (ccatnn1150==1)
+replace ccatnn1150=0 if (ccatnn1150==2)
+replace ccatnn1150=0 if (ccatnn1150==3)
+replace ccatnn1150=1 if (ccatnn1150==4)
+replace ccatnn1150=1 if (ccatnn1150==5)
+replace ccatnn1150=1 if (ccatnn1150==6)
+replace ccatnn1150=1 if (ccatnn1150==7)
+replace ccatnn1150=1 if (ccatnn1150==8)
+replace ccatnn1150=1 if (ccatnn1150==9)
+
+tab ccatnn1150
+
+pca n914 n917
+gen genability11= e(sample)
+
+tab genability11
+
+tab n204
+
+gen toilet = n204
+replace toilet=. if (toilet==-1)
+replace toilet=. if (toilet==1)
+replace toilet=0 if (toilet==2)
+replace toilet=1 if (toilet==3)
+replace toilet=1 if (toilet==4)
+
+tab toilet
+
+gen itoilet = n205
+replace itoilet=. if (itoilet==-1)
+replace itoilet=. if (itoilet==1)
+replace itoilet=0 if (itoilet==2)
+replace itoilet=1 if (itoilet==3)
+replace itoilet=1 if (itoilet==4)
+
+tab itoilet
+
+gen otoilet = n206
+replace otoilet=. if (otoilet==-1)
+replace otoilet=. if (otoilet==1)
+replace otoilet=0 if (otoilet==2)
+replace otoilet=1 if (otoilet==3)
+replace otoilet=1 if (otoilet==4)
+
+tab otoilet
+
+gen cooking = n207
+replace cooking=. if (cooking==-1)
+replace cooking=. if (cooking==1)
+replace cooking=0 if (cooking==2)
+replace cooking=1 if (cooking==3)
+replace cooking=1 if (cooking==4)
+
+tab cooking
+
+gen water = n208
+replace water=. if (water==-1)
+replace water=. if (water==1)
+replace water=0 if (water==2)
+replace water=1 if (water==3)
+replace water=1 if (water==4)
+
+tab water
+
+gen garden = n209
+replace garden=. if (garden==-1)
+replace garden=. if (garden==1)
+replace garden=0 if (garden==2)
+replace garden=1 if (garden==3)
+replace garden=1 if (garden==4)
+
+tab garden
+
+tab n2492
+
+gen dconnn2492 = n2492
+replace dconnn2492=. if (dconnn2492==-1)
+replace dconnn2492=0 if (dconnn2492==0)
+replace dconnn2492=1 if (dconnn2492==1)
+replace dconnn2492=1 if (dconnn2492==2)
+replace dconnn2492=1 if (dconnn2492==3)
+replace dconnn2492=1 if (dconnn2492==4)
+replace dconnn2492=1 if (dconnn2492==5)
+replace dconnn2492=1 if (dconnn2492==6)
+replace dconnn2492=1 if (dconnn2492==7)
+replace dconnn2492=1 if (dconnn2492==8)
+replace dconnn2492=1 if (dconnn2492==9)
+
+tab dconnn2492
+
+tab n2825
+
+gen dconnage16dv46 = n2825
+replace dconnage16dv46=. if(dconnage16dv46==-1)
+replace dconnage16dv46=0 if(dconnage16dv46==1)
+replace dconnage16dv46=1 if(dconnage16dv46==2)
+replace dconnage16dv46=1 if(dconnage16dv46==3)
+replace dconnage16dv46=1 if(dconnage16dv46==4)
+replace dconnage16dv46=1 if(dconnage16dv46==5)
+replace dconnage16dv46=1 if(dconnage16dv46==6)
+
+tab dconnage16dv46
+
+		
+foreach var in acatnn0region bconnn99 maw5 aconnn512 acatnn236 bcatnn95 DadNeverReads ccatnn1434 ccatnn1150 genability11 toilet itoilet otoilet cooking water garden dconnn2492 dconnage16dv46{
+	regress econ201 `var'
+	testparm `var'
+}	
+		
+
+mi set wide
+
+mi register imputed econbin obin sex tenure nssec maw5 aconnn512 genability11 toilet itoilet cooking water dconnn2492
+tab _mi_miss
+
+mi impute chained ///
+///
+(logit, augment) obin sex tenure maw5 aconnn512 genability11 toilet itoilet cooking water dconnn2492 econbin ///
+///
+(mlogit, augment) nssec ///
+///
+, rseed(12346) dots force add(50) burnin(20) savetrace(MI_test_trace, replace)
+		
+		
+mi estimate, post dots: logit econbin i.obin i.sex i.tenure ib(3).nssec
+
+est store imputed
+
+etable
+
+estat ic
+fitstat
+		
+mimrgns, dydx(*) predict(pr) 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "imp" ///
+								   2 "margins", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Imputation Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("impute.docx", replace)  
+		
+		
+		
+mi estimate, post vartable nocitable 
+
+mi estimate, post dftable nocitable 
+		
+		
+save ncds_mi, replace
+
+use "G:\Stata data and do\NCDS\NCDS Sweep 23\stata\stata9\MI_test_trace"
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One"
+
+tsline econ201_mean*, name(mice1,replace)legend(off) ytitle("Mean of Economic Activity")
+tsline econ201_sd*, name(mice2, replace) legend(off) ytitle("SD of Economic Activity")
+graph combine mice1 mice2, xcommon cols(1) title(Trace plots of summaries of imputed values)
+graph save "miecon201l.gph", replace
+graph export "miecon201l.png", width(6000) replace
+
+
+tsline obin_mean*, name(mice3,replace)legend(off) ytitle("Mean of Educational Attainment")
+tsline obin_sd*, name(mice4, replace) legend(off) ytitle("SD of Educational Attainment")
+graph combine mice3 mice4, xcommon cols(1) title(Trace plots of summaries of imputed values)
+graph save "miedl.gph", replace
+graph export "miedl.png", width(6000) replace
+
+tsline tenure_mean*, name(mice7,replace)legend(off) ytitle("Mean of Housing Tenure")
+tsline tenure_sd*, name(mice8, replace) legend(off) ytitle("SD of Housing Tenure")
+graph combine mice7 mice8, xcommon cols(1) title(Trace plots of summaries of imputed values)
+graph save "mitenurel.gph", replace
+graph export "mitenurel.png", width(6000) replace
+
+tsline nssec_mean*, name(mice9,replace)legend(off) ytitle("Mean of NS-SEC")
+tsline nssec_sd*, name(mice10, replace) legend(off) ytitle("SD of NS-SEC")
+graph combine mice9 mice10, xcommon cols(1) title(Trace plots of summaries of imputed values)
+graph save "minssecl.gph", replace
+graph export "minssecl.png", width(6000) replace
+
+save MI_test_trace, replace 
+
+
+
+* Create ID variable 
+
+use"G:\Stata data and do\Tables and Figures\Tables and Figuers for Chapter One\ncdslogit"
 
 egen id = seq(), from(1)
 
@@ -1782,12 +2836,12 @@ label values econ201 econ201_lbl
 tab econ201
 
 gen econbin = .
-replace econbin=0 if (econ201==2)
-replace econbin=1 if (econ201==1)
-replace econbin=1 if (econ201==3)
-replace econbin=1 if (econ201==4)
+replace econbin=1 if (econ201==2)
+replace econbin=0 if (econ201==1)
+replace econbin=0 if (econ201==3)
+replace econbin=0 if (econ201==4)
 
-label define econbin_lbl 0"Continuing Schooling" 1"Not Continuing Schooling"
+label define econbin_lbl 1"Continuing Schooling" 0"Not Continuing Schooling"
 label values econbin econbin_lbl
 
 gen female=.
@@ -4862,14 +5916,85 @@ summarize camsisdom2000
 summarize camsisdom90
 
 rename BCSID bcsid
-keep bcsid nssecdom2000 nssecdom90 rgscdom2000 rgscdom90 camsisdom2000 camsisdom90
+keep bcsid nssecdom2000 nssecdom90 rgscdom2000 rgscdom90 camsisdom2000 camsisdom90 
 
 
 cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two"
 
 merge 1:m bcsid using subsample_test
 
-keep bcsid econ201 econbin nssecdom2000 nssecdom90 rgscdom2000 rgscdom90 camsisdom2000 camsisdom90 crecords female
+keep bcsid econ201 econbin nssecdom2000 nssecdom90 rgscdom2000 rgscdom90 camsisdom2000 camsisdom90 crecords female 
+
+save subsample_test, replace
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two"
+
+save subsample_test, replace
+
+use "G:\Stata data and do\BCS\BCS Birth\stata9\bcs7072a"
+
+gen pmart=.
+replace pmart=0 if (a0012==1)
+replace pmart=1 if (a0012==2)
+replace pmart=0 if (a0012==3)
+replace pmart=0 if (a0012==4)
+replace pmart=0 if (a0012==5)
+
+label define pmart_lbl 0"Single" 1"Married"
+label values pmart pmart_lbl
+
+gen parity=.
+replace parity=1 if(a0166==0)
+replace parity=2 if(a0166==1)
+replace parity=3 if(a0166==2)
+replace parity=4 if(a0166==3)
+replace parity=4 if(a0166>3 & a0166<18)
+
+label define parity_lbl 1"0" 2"1" 3"2" 4"3+"
+label values parity parity_lbl
+
+gen breast=.
+replace breast=0 if(a0297==1)
+replace breast=1 if(a0297==2)
+
+label define breast_lbl 0"Attempted" 1"Not Attempted"
+label values breast breast_lbl
+
+gen mage=.
+replace mage=1 if(a0005a>13 & a0005a<20)
+replace mage=2 if(a0005a>19 & a0005a<25)
+replace mage=3 if(a0005a>24 & a0005a<30)
+replace mage=4 if(a0005a>29 & a0005a<35)
+replace mage=5 if(a0005a>34 & a0005a<53)
+
+label define mage_lbl 1"less than 20" 2"20-24" 3"25-29" 4"30-34" 5"35 or more"
+label values mage mage_lbl
+
+gen med=.
+replace med=1 if(a0009>6 & a0009<15)
+replace med=2 if(a0009==15)
+replace med=3 if(a0009==16)
+replace med=4 if(a0009==17)
+replace med=5 if(a0009>17 & a0009<32)
+
+label define med 1"14 or less" 2"15" 3"16" 4"17" 5"18 or more"
+label values med med_lbl 
+
+gen fed=.
+replace fed=1 if(a0010>6 & a0010<15)
+replace fed=2 if(a0010==15)
+replace fed=3 if(a0010==16)
+replace fed=4 if(a0010==17)
+replace fed=5 if(a0010>17 & a0010<32)
+
+label define fed 1"14 or less" 2"15" 3"16" 4"17" 5"18 or more"
+label values fed fed_lbl
+
+keep bcsid pmart parity breast mage med fed
+
+merge 1:m bcsid using subsample_test
+
+drop _merge
 
 save subsample_test, replace
 
@@ -5008,9 +6133,9 @@ keep if !missing(crecords)
 
 count
 
-misstable summarize econ201 obin htenure female nssecdom2000 rgscdom2000 camsisdom2000
+misstable summarize econ201 obin htenure female nssecdom2000 rgscdom2000 camsisdom2000 
 
-misstable patterns econ201 obin htenure female nssecdom2000 rgscdom2000 camsisdom2000
+misstable patterns econ201 obin htenure female nssecdom2000 rgscdom2000 camsisdom2000 
 
 misstable patterns econ201 obin htenure female nssecdom2000 rgscdom2000 camsisdom2000, frequency
 
@@ -5026,8 +6151,8 @@ cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two"
 
 collect clear
 
-table (var) (), statistic(fvfrequency econ201 econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90) ///
-					statistic(fvpercent econ201 econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90) /// 
+table (var) (), statistic(fvfrequency econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90) ///
+					statistic(fvpercent econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90) /// 
 					statistic(mean camsisdom2000 camsisdom90) ///  
 					statistic(sd camsisdom2000 camsisdom90) 			
 collect remap result[fvfrequency mean] = Col[1 1] 
@@ -5040,8 +6165,7 @@ collect get empty = "  ", tag(Col[1] var[empty])
 count
 	collect get n = `r(N)', tag(Col[2] var[n])
 	
-collect layout (var[1.econ201 2.econ201 3.econ201 4.econ201 5.econ201 ///
-					0.econbin 1.econbin ///
+collect layout (var[0.econbin 1.econbin ///
 					0.obin 1.obin ///
 					0.female 1.female  ///
 					0.htenure 1.htenure ///
@@ -5058,8 +6182,8 @@ collect label levels Col 1 "n" 2 "%"
 collect style header Col, title(hide)
 collect style header var[empty mylabel], level(hide)
 collect style row stack, nobinder
-collect style cell var[econ201 econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90]#Col[1], nformat(%6.0fc) 
-collect style cell var[econ201 econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90]#Col[2], nformat(%6.2f) sformat("%s%%") 	
+collect style cell var[econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90]#Col[1], nformat(%6.0fc) 
+collect style cell var[econbin obin female htenure nssecdom2000 nssecdom90 rgscdom2000 rgscdom90]#Col[2], nformat(%6.2f) sformat("%s%%") 	
 collect style cell var[camsisdom2000 camsisdom90], nformat(%6.2f)
 collect style cell border_block[item row-header], border(top, pattern(nil)) 
 collect title "Table 1: Descriptive Statistics for Economic Activity"
@@ -5069,11 +6193,9 @@ collect preview
 collect export "Table1BCS.docx", replace
 
 
-save subsample_test, replace
+save subsample_test2, replace
 
 dtable i.obin i.female i.htenure i.nssecdom2000 i.nssecdom90 i.rgscdom2000 i.rgscdom90 camsisdom2000 camsisdom90, by(econbin) nformat(%6.2fc) title(Descriptive Statistics by Economic Activity) export("Table2BCSa", as(docx) replace)
-
-dtable i.obin i.female i.htenure i.nssecdom2000 i.nssecdom90 i.rgscdom2000 i.rgscdom90 camsisdom2000 camsisdom90, by(econ201) nformat(%6.2fc) title(Descriptive Statistics by Economic Activity) export("Table2BCSb", as(docx) replace)
 
 dtable i.nssecdom2000, by(nssecdom90) nformat(%6.2fc) title(Descriptive Statistics comparing NS-SEC by SOC2000 and SOC90 codes) export("Table3", as(docx) replace)
 
@@ -5094,6 +6216,1087 @@ rename rgscdom90 rgsc90
 
 egen id = seq(), from(9134)
 
+
+* model building 
+
+glm econbin, family(binomial) link(logit)
+estat ic
+ 
+
+logit econbin obin 
+estat ic
+fitstat 
+
+logit econbin sex 
+estat ic
+fitstat 
+
+logit econbin tenure 
+estat ic
+fitstat 
+
+logit econbin ib(3).nssec 
+estat ic
+fitstat 
+
+
+logit econbin obin sex 
+estat ic
+fitstat 
+
+logit econbin obin sex tenure
+estat ic
+fitstat 
+
+logit econbin obin sex tenure ib(3).nssec
+estat ic
+fitstat 
+
+logit econbin ib(2).rgsc 
+estat ic
+fitstat 
+
+logit econbin obin sex tenure ib(2).rgsc
+estat ic
+fitstat 
+
+logit econbin camsis
+estat ic
+fitstat 
+
+logit econbin obin sex tenure camsis
+estat ic
+fitstat 
+
+*Models 
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec
+
+est store logitnssecabcs
+
+etable 
+
+fitstat
+
+
+
+* qv stats
+
+gen qvnssec=.
+replace qvnssec=1 if(nssec==3)
+replace qvnssec=2 if(nssec==1)
+replace qvnssec=3 if(nssec==2)
+replace qvnssec=4 if(nssec==4)
+replace qvnssec=5 if(nssec==5)
+replace qvnssec=6 if(nssec==6)
+replace qvnssec=7 if(nssec==7)
+replace qvnssec=8 if(nssec==8)
+
+
+label define qvnssec_lbl 1"Lower Managerial and professional occupations" 2"Large Employers and higher managerial occupations" 3"Higher professional occupations" 4"Intermediate occupations" 5"Small employers and own account workers" 6"Lower supervisory and technical occupations" 7"Semi-routine occupations" 8"Routine occupations" 
+label values qvnssec qvnssec_lbl
+
+*Graph Settings
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+* graphs
+logit econbin i.obin i.sex i.tenure i.qvnssec
+
+estimates store modellogitabcs
+
+estimates restore modellogitabcs
+
+qv i.qvnssec
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+gen lbg=LB[7,1] if _n==14
+gen lbh=LB[8,1] if _n==16
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf lbg lbh)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+gen ubg=UB[7,1] if _n==14
+gen ubh=UB[8,1] if _n==16
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf ubg ubh)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+replace group=_n if _n==14
+replace group=_n if _n==16
+
+label variable group "Class"
+label define region 2 "1.1" 4 "1.2" 6 "2" 8 "3" 10 "4" 12 "5" 14 "6" 16 "7"
+label value group region
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12 14 16, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvnssec
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+gen llg=A[1,13] if _n==13
+gen llh=A[1,14] if _n==15
+egen lowerbound = rowtotal(lla llb llc lld lle llf llg llh)
+
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+gen ulg=A[2,13] if _n==13
+gen ulh=A[2,14] if _n==15
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf ulg ulh)
+
+gen beta=(lowerbound+upperbound)/2
+
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+replace grouping=_n if _n==13
+replace grouping=_n if _n==15
+label variable grouping "Class"
+label define regions 1 "1.1" 3 "1.2" 5 "2" 7 "3" 9 "4" 11 "5" 13 "6" 15 "7"
+label value grouping regions
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11 13 15, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental NS-SEC", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: BCS, N=723", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("NS-SEC", size(msmall)) ///
+xla(1 3 5 7 9 11 13 15, valuelabel alternate ) name(quasi1bcs, replace)
+
+graph export "logitquasigraphbcs.png", width(6000) replace
+
+
+*Marginal effects graphs
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec
+
+margins nssec, atmeans saving(file1, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, Predictive Margins", size(msmall)) xtitle("NS-SEC", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1.1" 2"1.2" 3"2" 4"3" 5"4" 6"5" 7"6" 8"7", labsize(msmall)) name(main1bcs, replace) 
+
+margins, dydx(nssec)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, AMEs of Continuing Schooling", size(msmall)) xtitle("NS-SEC", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", labsize(msmall)) note("Reference Category NS-SEC 2", size(vsmall)) name(diff1bcs, replace)
+
+graph combine main1 diff1, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental NS-SEC on Continuing Schooling", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combbcs, replace)
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph export "nssecmarginsbcs.png", width(6000) replace
+
+
+margins obin, atmeans saving(file6, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Educational Attainment, Predictive Margins", size(msmall)) xtitle("Educational Attainment", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Educational Attainment")) xlabel(0 "<5" 1 "≥5") note("Data Source: BCS, N=723", size(vsmall)) caption("NS-SEC, Sex, and Housing Tenure also included in Model", size(vsmall)) name(main2abcs, replace) 
+
+graph export "obinmarginsbcs.png", width(6000) replace
+
+margins sex, atmeans saving(file11, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Sex, Predictive Margins", size(msmall)) xtitle("Sex", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Sex")) xlabel(0 "Female" 1 "Male") note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, NS-SEC, and Housing Tenure also included in Model", size(vsmall)) name(main2bbcs, replace) 
+
+graph export "sexmarginsbcs.png", width(6000) replace
+
+margins tenure, atmeans saving(file16, replace)
+marginsplot, recast(line) ciopt(color(black%100)) title("Housing Tenure, Predictive Margins", size(msmall)) xtitle("Housing Tenure", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) legend(on order(1 "Housing Tenure")) xlabel(0 "Own" 1 "Don't") note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and NS-SEC also included in Model", size(vsmall)) name(main2cbcs, replace) 
+
+graph export "tenuremarginsbcs.png", width(6000) replace
+
+
+quietly logit econbin i.obin i.sex i.tenure ib(3).nssec
+estat ic 
+fitstat
+predict yhat if e(sample)
+
+ttest yhat, by(econbin)
+
+margins, dydx(*) post
+
+est store logitnssecccamarg
+
+etable, append
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC Model" ///
+										2 "Margins Model", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchaptertwo.docx", replace)  
+		
+		
+logit econbin i.obin i.sex i.tenure ib(2).rgsc
+etable, append
+estat ic 
+fitstat
+predict yhat2 if e(sample)
+
+ttest yhat2, by(econbin)
+
+margins, dydx(*) post
+
+etable, append
+
+logit econbin i.obin i.sex i.tenure camsis
+etable, append
+estat ic 
+fitstat
+predict yhat3 if e(sample)
+
+ttest yhat3, by(econbin)
+
+margins, dydx(*) post
+
+etable, append
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC Model" ///
+										2 "Margins Model" ///
+										3 "RGSC" ///
+										4 "Margins" ///
+										5 "CAMSIS" ///
+										6 "Margins", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchaptertwob.docx", replace)  
+
+		
+		
+		
+		
+		
+		
+*qv for rgsc 
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+gen qvrgsc=.
+replace qvrgsc=1 if(rgsc==2)
+replace qvrgsc=2 if(rgsc==1)
+replace qvrgsc=3 if(rgsc==3)
+replace qvrgsc=4 if(rgsc==4)
+replace qvrgsc=5 if(rgsc==5)
+replace qvrgsc=6 if(rgsc==6)
+
+label define qvrgsc_lbl 1"Managerial and Technical" 2"Professional" 3"Skilled non-manual" 4"Skilled manual" 5"Partly skilled" 6"Unskilled"
+label values qvrgsc qvrgsc_lbl
+
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc
+
+qv i.qvrgsc
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf quasilower
+
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group
+
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+
+label variable group "Class"
+label define regionrc 2 "1" 4 "2" 6 "3NM" 8 "3M" 10 "4" 12 "5" 
+label value group regionrc
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf lowerbound
+
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+egen lowerbound = rowtotal(lla llb llc lld lle llf)
+
+drop ula ulb ulc uld ule ulf upperbound beta
+
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+label variable grouping "Class"
+label define regionsrc 1 "1" 3 "2" 5 "3NM" 7 "3M" 9 "4" 11 "5" 
+label value grouping regionsrc
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental RGSC", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: BCS, N=723", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("RGSC", size(msmall)) ///
+xla(1"1" 3"2" 5"3NM" 7"3M" 9"4" 11"5", valuelabel alternate ) name(quasi2bcs, replace)
+
+graph export "logitquasigraphrgsc.png", width(6000) replace
+
+graph combine quasi1bcs quasi2bcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by Parental Social Class", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasibcs, replace)
+
+graph export "bcscombquasi.png", width(6000) replace
+
+
+*rgsc margins graph
+
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc
+
+margins rgsc, atmeans saving(file1a, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("RGSC, Predictive Margins", size(msmall)) xtitle("RGSC", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1" 2"2" 3"3NM" 4"3M" 5"4" 6"5", labsize(msmall)) name(main1abcs, replace) 
+
+margins, dydx(rgsc)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("RGSC, AMEs of Continuing Schooling", size(msmall)) xtitle("RGSC", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1" 2"3NM" 3"3M" 4"4" 5"5", labsize(msmall)) note("Reference Category RGSC 2", size(vsmall)) name(diff1abcs, replace)
+
+graph combine main1abcs diff1abcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental RGSC on Continuing Schooling", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combbcs, replace)
+
+graph export "bcsRGSCmargins.png", width(6000) replace
+
+*camsis margins graph 
+
+quietly logit econbin i.obin i.sex i.tenure camsis 
+
+margins, at(camsis =(0(1)88)) saving(file1b, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, Predictive Margins", size(msmall)) xtitle("CAMSIS", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) name(main1bbcs, replace) 
+
+margins, dydx(camsis) at(camsis =(0(1)88))
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, AMEs of Continuing Schooling", size(msmall)) xtitle("CAMSIS", size(msmall)) ytitle("Continue Schooling", size(msmall)) name(diff1bbcs, replace) 
+
+graph combine main1bbcs diff1bbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental CAMSIS on Continuing Schooling", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb1bcs, replace)
+
+graph export "bcsCAMSISmargins.png", width(6000) replace
+
+
+graph combine main1bcs main1abcs main1bbcs diff1bcs diff1abcs diff1bbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental Social Stratification Measures on Continuing Schooling", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb2bcs, replace)
+
+graph export "bcssocstratmargins.png", width(6000) replace
+
+
+* SOC CODES... *
+
+logit econbin ib(3).nssec90 
+estat ic 
+fitstat 
+
+logit econbin obin sex tenure ib(3).nssec90
+estat ic 
+fitstat 
+
+logit econbin ib(2).rgsc90 
+estat ic
+fitstat 
+
+logit econbin obin sex tenure ib(3).rgsc90 
+estat ic
+fitstat 
+
+logit econbin cam90
+estat ic
+fitstat 
+
+logit econbin obin sex tenure cam90
+estat ic
+fitstat 
+
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+estat ic
+fitstat
+predict yhatn9b if e(sample)
+
+ttest yhatn9b, by(econbin)
+
+est store logitnssecb
+etable, append 
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec90
+margins, dydx(*) post
+est store logitnssecbmargins
+etable, append 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC 2000 Model" ///
+										2 "NS-SEC 90 Model" /// 
+										3 "NS-SEC 90 MARGINS", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchapteroneb.docx", replace) 
+
+
+* qv stats
+
+gen qvnssec90=.
+replace qvnssec90=1 if(nssec90==3)
+replace qvnssec90=2 if(nssec90==1)
+replace qvnssec90=3 if(nssec90==2)
+replace qvnssec90=4 if(nssec90==4)
+replace qvnssec90=5 if(nssec90==5)
+replace qvnssec90=6 if(nssec90==6)
+replace qvnssec90=7 if(nssec90==7)
+replace qvnssec90=8 if(nssec90==8)
+
+
+label define qvnssec90_lbl 1"Lower Managerial and professional occupations" 2"Large Employers and higher managerial occupations" 3"Higher professional occupations" 4"Intermediate occupations" 5"Small employers and own account workers" 6"Lower supervisory and technical occupations" 7"Semi-routine occupations" 8"Routine occupations" 
+label values qvnssec90 qvnssec90_lbl
+
+*Graph Settings
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+* graphs
+logit econbin i.obin i.sex i.tenure i.qvnssec90
+
+estimates store modellogitab
+
+estimates restore modellogitab
+
+qv i.qvnssec90
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf lbg lbh quasilower
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+gen lbg=LB[7,1] if _n==14
+gen lbh=LB[8,1] if _n==16
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf lbg lbh)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf ubg ubh quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+gen ubg=UB[7,1] if _n==14
+gen ubh=UB[8,1] if _n==16
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf ubg ubh)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group 
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+replace group=_n if _n==14
+replace group=_n if _n==16
+
+label variable group "Class"
+label define regionb 2 "1.1" 4 "1.2" 6 "2" 8 "3" 10 "4" 12 "5" 14 "6" 16 "7"
+label value group regionb
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12 14 16, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvnssec90
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf llg llh lowerbound
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+gen llg=A[1,13] if _n==13
+gen llh=A[1,14] if _n==15
+egen lowerbound = rowtotal(lla llb llc lld lle llf llg llh)
+
+drop ula ulb ulc uld ule ulf ulg ulh upperbound beta
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+gen ulg=A[2,13] if _n==13
+gen ulh=A[2,14] if _n==15
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf ulg ulh)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+replace grouping=_n if _n==13
+replace grouping=_n if _n==15
+label variable grouping "Class"
+label define regionsb 1 "1.1" 3 "1.2" 5 "2" 7 "3" 9 "4" 11 "5" 13 "6" 15 "7"
+label value grouping regionsb
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11 13 15, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental NS-SEC (SOC90)", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: BCS, N=723", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("NS-SEC", size(msmall)) ///
+xla(1 3 5 7 9 11 13 15, valuelabel alternate ) name(quasi1bbcs, replace)
+
+graph export "logitquasibgraphbcs.png", width(6000) replace
+
+
+graph combine quasi1bcs quasi1bbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by SOC construction of Parental NS-SEC", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasibcs, replace)
+
+graph export "logitquasibcombgraphbcs.png", width(6000) replace
+
+*rgsc90 graph
+*rgsc quasi graph
+
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle color ci_area gs12%50
+
+gen qvrgsc90=.
+replace qvrgsc90=1 if(rgsc90==2)
+replace qvrgsc90=2 if(rgsc90==1)
+replace qvrgsc90=3 if(rgsc90==3)
+replace qvrgsc90=4 if(rgsc90==4)
+replace qvrgsc90=5 if(rgsc90==5)
+replace qvrgsc90=6 if(rgsc90==6)
+
+label define qvrgsc90_lbl 1"Managerial and Technical" 2"Professional" 3"Skilled non-manual" 4"Skilled manual" 5"Partly skilled" 6"Unskilled"
+label values qvrgsc90 qvrgsc90_lbl
+
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc90
+
+qv i.qvrgsc90
+
+matrix define LB = e(qvlb)
+matrix list LB
+
+drop lba lbb lbc lbd lbe lbf quasilower
+
+gen lba=LB[1,1] if _n==6
+gen lbb=LB[2,1] if _n==2
+gen lbc=LB[3,1] if _n==4
+gen lbd=LB[4,1] if _n==8
+gen lbe=LB[5,1] if _n==10
+gen lbf=LB[6,1] if _n==12
+egen quasilower = rowtotal(lba lbb lbc lbd lbe lbf)
+replace quasilower=. if(quasilower==0)
+
+matrix define UB = e(qvub)
+matrix list UB
+
+drop uba ubb ubc ubd ube ubf quasiupper b
+
+gen uba=UB[1,1] if _n==6
+gen ubb=UB[2,1] if _n==2
+gen ubc=UB[3,1] if _n==4
+gen ubd=UB[4,1] if _n==8
+gen ube=UB[5,1] if _n==10
+gen ubf=UB[6,1] if _n==12
+egen quasiupper = rowtotal(uba ubb ubc ubd ube ubf)
+replace quasiupper=. if(quasiupper==0)
+
+gen b=(quasilower+quasiupper)/2
+
+drop group
+
+gen group=_n if _n==6
+replace group=_n if _n==2
+replace group=_n if _n==4
+replace group=_n if _n==8
+replace group=_n if _n==10
+replace group=_n if _n==12
+
+label variable group "Class"
+label define regionrac 2 "1" 4 "2" 6 "3NM" 8 "3M" 10 "4" 12 "5" 
+label value group regionrc
+
+graph twoway scatter b group ///
+|| rspike quasiupper quasilower group, vert   /// 
+xlabel(2 4 6 8 10 12, valuelabel alternate )
+
+logit econbin i.obin i.sex i.tenure i.qvrgsc90
+
+matrix list e(b)
+matrix list r(table)
+matrix define A = r(table)
+matrix define A = A["ll".."ul", 1...]
+matrix list A
+
+drop lla llb llc lld lle llf lowerbound
+
+gen lla=0 if _n==5
+gen llb=A[1,8] if _n==1
+gen llc=A[1,9] if _n==3
+gen lld=A[1,10] if _n==7
+gen lle=A[1,11] if _n==9
+gen llf=A[1,12] if _n==11
+egen lowerbound = rowtotal(lla llb llc lld lle llf)
+
+drop ula ulb ulc uld ule ulf upperbound beta
+
+gen ula=0 if _n==5
+gen ulb=A[2,8] if _n==1
+gen ulc=A[2,9] if _n==3
+gen uld=A[2,10] if _n==7
+gen ule=A[2,11] if _n==9
+gen ulf=A[2,12] if _n==11
+egen upperbound = rowtotal(ula ulb ulc uld ule ulf)
+
+gen beta=(lowerbound+upperbound)/2
+
+drop grouping 
+
+gen grouping=_n if _n==5
+replace grouping=_n if _n==1
+replace grouping=_n if _n==3
+replace grouping=_n if _n==7
+replace grouping=_n if _n==9
+replace grouping=_n if _n==11
+label variable grouping "Class"
+label define regionsrac 1 "1" 3 "2" 5 "3NM" 7 "3M" 9 "4" 11 "5" 
+label value grouping regionsrcsub
+
+graph twoway scatter beta grouping ///
+|| rspike upperbound lowerbound grouping, vert   /// 
+xlabel(1 3 5 7 9 11, valuelabel alternate )
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph twoway (scatter beta grouping, symbol(Oh) mcolor(black) legend(label(1 "Log Odds Coefficient")) legend(label(2 "Log Odds Confidence Intervals"))) || rspike upperbound lowerbound grouping, lcolor(black) || (scatter b group, msymbol(Dh) mcolor(red) legend(label(3 "Log Odds Coefficient")) legend(label(4 "Quasi-Variance Bounds"))) || rspike quasiupper quasilower group, lcolor(red) ///
+title("Predictions of Staying in Schooling versus Not by Parental RGSC (SOC 90)", size(msmall) color(black)) ///
+subtitle("Confidence intervals of regression coefficients, by estimation method", size(msmall) color(black)) ///
+note("Data Source: BCS, N=723", size(vsmall) color(black)) ///
+caption("Educational Attainment, Sex, and Housing Tenure included in Model", size(vsmall) color(black)) ///
+xtitle("RGSC", size(msmall)) ///
+xla(1"1" 3"2" 5"3NM" 7"3M" 9"4" 11"5", valuelabel alternate ) name(quasi2bbcs, replace)
+
+graph export "logitquasigraphrgsc90bcs.png", width(6000) replace
+
+
+graph combine quasi2bcs quasi2bbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Comaprative Log Odds and Quasi-variance Statistics by SOC construction of Parental RGSC", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(combquasi2bcs, replace)
+
+graph export "logitquasigraphrgsccombbcs.png", width(6000) replace
+
+		
+logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+estat ic
+fitstat
+predict yhatn9bbcs if e(sample)
+
+ttest yhatn9bbcs, by(econbin)
+etable, append 
+
+logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+margins, dydx(*) post
+etable, append 
+
+logit econbin i.obin i.sex i.tenure cam90
+estat ic
+fitstat
+predict yhatn9cbcs if e(sample)
+
+ttest yhatn9cbcs, by(econbin)
+etable, append 
+
+logit econbin i.obin i.sex i.tenure cam90
+margins, dydx(*) post
+etable, append 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "NS-SEC 2000 Model" ///
+										2 "NS-SEC 90 Model" /// 
+										3 "NS-SEC 90 MARGINS", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: NCDS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("logitregressionchapteroneb.docx", replace) 
+		
+		
+
+* margins graphs for soc90 
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
+logit econbin i.obin i.sex i.tenure i.nssec90
+margins nssec90, atmeans saving(file190bcs, replace) post
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, Predictive Margins", size(msmall)) xtitle("NS-SEC (SOC90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1.1" 2"1.2" 3"2" 4"3" 5"4" 6"5" 7"6" 8"7", labsize(msmall)) name(main190bcs, replace) 
+
+logit econbin i.obin i.sex i.tenure i.nssec90
+margins, dydx(nssec90)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("NS-SEC, AMEs of Continuing Schooling", size(msmall)) xtitle("NS-SEC (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", labsize(msmall)) note("Reference Category NS-SEC 2", size(vsmall)) name(diff190bcs, replace)
+
+graph combine main1 main190 diff1 diff190, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental NS-SEC on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: BCS, N=723, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb1abcs, replace)
+
+cd"G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final"
+
+graph export "ncdsnssecmarginscombbcs.png", width(6000) replace
+
+
+
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+
+margins rgsc90, atmeans saving(file1abcs, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("RGSC, Predictive Margins", size(msmall)) xtitle("RGSC (S0C 90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) xlabel(1 "1" 2"2" 3"3NM" 4"3M" 5"4" 6"5", labsize(msmall)) name(main1abbcs, replace) 
+
+quietly logit econbin i.obin i.sex i.tenure ib(2).rgsc90
+margins, dydx(rgsc90)
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("RGSC, AMEs of Continuing Schooling", size(msmall)) xtitle("RGSC (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) xlabel(1 "1" 2"3NM" 3"3M" 4"4" 5"5", labsize(msmall)) note("Reference Category RGSC 2", size(vsmall)) name(diff1abbcs, replace)
+
+graph combine main1abcs main1abbcs diff1abcs diff1abbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental RGSC on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: BCS, N=723, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb2abcs, replace)
+
+graph export "ncdsRGSCmarginscombbcs.png", width(6000) replace
+
+*camsis margins graph 
+
+quietly logit econbin i.obin i.sex i.tenure cam90 
+
+margins, at(cam90 =(0(1)88)) saving(file1bbcs, replace)
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, Predictive Margins", size(msmall)) xtitle("CAMSIS (SOC 90)", size(msmall)) ytitle("Continuing Schooling", size(msmall)) plotopts(lcolor(black) lpattern("l")) name(main1bbbcs, replace) 
+
+quietly logit econbin i.obin i.sex i.tenure cam90 
+margins, dydx(cam90) at(cam90 =(0(1)88))
+marginsplot, recast(line) plotopts(lcolor(black)) ciopt(color(black%20)) recastci(rarea) title("CAMSIS, AMEs of Continuing Schooling", size(msmall)) xtitle("CAMSIS (SOC 90)", size(msmall)) ytitle("Continue Schooling", size(msmall)) name(diff1bbbcs, replace) 
+
+graph combine main1bbcs main1bbbcs diff1bbcs diff1bbbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Parental CAMSIS on Continuing Schooling by SOC Codes", size(msmall)) note("Data Source: BCS, N=723, SOC 2000 on left, SOC 90 on right", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb3abcs, replace)
+
+graph export "ncdsCAMSISmarginscombbcs.png", width(6000) replace
+
+
+graph combine main190bcs main1abbcs main1bbbcs diff190bcs diff1abbcs diff1bbbcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Social Stratification Measures on Continuing Schooling by SOC 90", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb4abcs, replace)
+
+graph export "ncdscombmarginscomb90bcs.png", width(6000) replace
+
+
+graph combine comb2bcs comb4abcs, ycommon xsize(6.5) ysize(2.7) iscale(.8) title("Predictive and Average Marginal Effects of Social Stratification Measures on Continuing Schooling by SOC 90", size(msmall)) note("Data Source: BCS, N=723", size(vsmall)) caption("Educational Attainment, Sex, and Housing Tenure also included in Model", size(vsmall)) name(comb3abcs, replace)
+		
+save bcscomplete, replace 
+		
+* Missing Data 
+
+cd "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two"
+
+use "G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\subsample_test"
+
+keep if !missing(crecords)
+
+egen all_missing = rowmiss(econ201 obin female htenure nssecdom2000)
+
+tab all_missing
+		
+pwcorr econbin obin female htenure nssecdom2000 pmart parity breast mage med fed, obs 
+
+foreach var in pmart parity breast mage med fed{
+	regress econbin `var'
+	testparm `var'
+}
+		
+
+mi set wide
+
+mi register imputed econbin obin female htenure nssecdom2000 parity breast mage med fed
+tab _mi_miss
+		
+
+cd"G:\Stata data and do\BCS"
+
+mi impute chained ///
+///
+(logit, augment) econbin obin female htenure breast ///
+///
+(ologit, augment) med fed mage parity ///
+///
+(mlogit, augment) nssecdom2000 ///
+///
+, rseed(12346) dots force add(50) burnin(20) savetrace(subsample_testimpute, replace)
+
+		
+mi estimate, post dots: logit econbin i.obin i.female i.htenure ib(3).nssecdom2000
+est store imp
+etable
+		
+mimrgns, dydx(*) predict(pr) 
+
+
+collect style showbase all
+
+collect label levels etable_depvar 1 "imp", modify
+
+collect style cell, font(Times New Roman)
+
+etable, replay column(depvar) ///
+cstat(_r_b, nformat(%4.2f))  ///
+		cstat(_r_se, nformat(%6.2f))  ///
+		showstars showstarsnote  ///
+		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
+		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
+		title("Table 2: Imputation Regression Models") ///
+		titlestyles(font(Arial Narrow, size(14) bold)) ///
+		note("Data Source: BCS") ///
+		notestyles(font(Arial Narrow, size(10) italic)) ///
+		export("impute.docx", replace)  
+		
+		
+		
+mi estimate, post vartable nocitable 
+
+mi estimate, post dftable nocitable 
+		
+
+save imputebcs, replace
+		
+*merged cohorts
+use"G:\Stata data and do\Tables and Figures\Tables and Figures for Chapter Two\Final\bcscomplete"
+
+
 cd"G:\Stata data and do\merging"
 
 save bcsmerge, replace
@@ -5112,25 +7315,105 @@ tab cohort
 keep econbin sex tenure obin nssec nssec90 camsis cam90 rgsc rgsc90 id cohort
 
 
-logit econbin i.obin i.sex i.tenure i.nssec if cohort==0
-
-logit econbin i.obin i.sex i.tenure i.nssec if cohort==1
-
-logit econbin obin##cohort sex##cohort tenure##cohort ib(3).nssec##cohort
-
+logit econbin i.obin i.sex i.tenure ib(3).nssec if cohort==0
+estat ic
 fitstat
 
-est store coeflogit
+predict yhat1 if e(sample)
+
+ttest yhat1, by(econbin)
+
 etable
 
-margins, dydx(*) post
-est store marginslogit
+logit econbin i.obin i.sex i.tenure ib(3).nssec if cohort==1
+estat ic
+fitstat
+
+predict yhat2 if e(sample)
+
+ttest yhat2, by(econbin)
+
 etable, append
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec 
+estat ic
+fitstat
+
+predict yhat3 if e(sample)
+
+ttest yhat3, by(econbin)
+
+etable, append
+
+logit econbin i.obin i.sex i.tenure ib(3).nssec i.cohort
+estat ic
+fitstat
+
+predict yhat4 if e(sample)
+
+ttest yhat4, by(econbin)
+
+etable, append
+
+logit econbin obin##cohort i.sex i.tenure ib(3).nssec 
+estat ic
+fitstat
+
+predict yhat5 if e(sample)
+
+ttest yhat5, by(econbin)
+
+etable, append
+
+logit econbin obin##cohort sex##cohort i.tenure ib(3).nssec 
+estat ic
+fitstat
+
+predict yhat6 if e(sample)
+
+ttest yhat6, by(econbin)
+
+etable, append
+
+logit econbin obin##cohort sex##cohort tenure##cohort ib(3).nssec 
+estat ic
+fitstat
+
+predict yhat7 if e(sample)
+
+ttest yhat7, by(econbin)
+
+etable, append
+
+logit econbin obin##cohort sex##cohort tenure##cohort ib(3).nssec##cohort 
+estat ic
+fitstat
+
+predict yhat8 if e(sample)
+
+ttest yhat8, by(econbin)
+
+etable, append
+
+
+***
+margins, dydx(*) post
+**est store marginslogit
+**etable, append
+***
+
+
 
 collect style showbase all
 
-collect label levels etable_depvar 1 "Coef" ///
-										2 "AME", modify
+collect label levels etable_depvar 1 "NCDS Model" ///
+										2 "BCS Model" ///
+										3 "Combined Model" ///
+										4 "Cohort Model" ///
+										5 "Education Interaction" ///
+										6 "+ Sex Interaction" ///
+										7 "+ Tenure Interaction" ///
+										8 "+ NS-SEC Interaction", modify
 
 collect style cell, font(Times New Roman)
 
@@ -5141,79 +7424,317 @@ cstat(_r_b, nformat(%4.2f))  ///
 		stars(.05 "*" .01 "**" .001 "***", attach(_r_b)) ///
 		mstat(N) mstat(aic) mstat(bic) mstat(r2_a)	///
 		title("Table 2: Regression Models") ///
-		titlestyles(font(Arial Narrow, size(14) bold)) ///
-		note("Data Source: NCDS") ///
+		titlestyles(font(Arial Narrow, size(10) bold)) ///
+		note("Data Source: NCDS and BCS") ///
 		notestyles(font(Arial Narrow, size(10) italic)) ///
-		export("logitregressionchapterone.docx", replace)  
-
-set scheme stcolor, perm
+		export("PartOneLogit.docx", replace)  
 		
+		
+		
+		
+		
+		
+		
+*Marginal effects graphs
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+
 logit econbin obin##cohort sex##cohort tenure##cohort ib(3).nssec##cohort
 
-margins obin, at(cohort=(0 1)) vsquish
 
+margins if cohort==0, dydx(nssec) saving(fileinteract1, replace)
+
+margins if cohort==1, dydx(nssec) saving(fileinteract2, replace)
+
+
+save marginsmerge, replace
+
+use fileinteract1, clear
+append using fileinteract2, nolabel
+
+merge 1:1 _n using marginsmerge 
+
+gen n= _n
+
+list n _margin _ci_ub _ci_lb in 1/14
+
+gen mar1a = _margin if (n==1)
+gen mar2a = _margin if (n==2)
+gen mar3a = _margin if (n==3)
+gen mar4a = _margin if (n==4)
+gen mar5a = _margin if (n==5)
+gen mar6a = _margin if (n==6)
+gen mar7a = _margin if (n==7)
+egen margins1a = rowtotal(mar1a mar2a mar3a mar4a mar5a mar6a mar7a)
+replace margins1a=. if(margins1a==0)
+
+tab margins1a
+
+gen mar1uba = _ci_ub if (n==1)
+gen mar2uba = _ci_ub if (n==2)
+gen mar3uba = _ci_ub if (n==3)
+gen mar4uba = _ci_ub if (n==4)
+gen mar5uba = _ci_ub if (n==5)
+gen mar6uba = _ci_ub if (n==6)
+gen mar7uba = _ci_ub if (n==7)
+egen margins1uba = rowtotal(mar1uba mar2uba mar3uba mar4uba mar5uba mar6uba mar7uba)
+replace margins1uba=. if(margins1uba==0)
+
+tab margins1uba
+
+gen mar1lba = _ci_lb if (n==1)
+gen mar2lba = _ci_lb if (n==2)
+gen mar3lba = _ci_lb if (n==3)
+gen mar4lba = _ci_lb if (n==4)
+gen mar5lba = _ci_lb if (n==5)
+gen mar6lba = _ci_lb if (n==6)
+gen mar7lba = _ci_lb if (n==7)
+egen margins1lba = rowtotal(mar1lba mar2lba mar3lba mar4lba mar5lba mar6lba mar7lba)
+replace margins1lba=. if(margins1lba==0)
+
+tab margins1lba
+
+gen grouping=_n if _n==1
+replace grouping=_n if _n==2
+replace grouping=_n if _n==3
+replace grouping=_n if _n==4
+replace grouping=_n if _n==5
+replace grouping=_n if _n==6
+replace grouping=_n if _n==7
+label variable grouping "Class"
+label define regionsmarg 1 "1" 2 "2" 3"3" 4 "4" 5 "5" 6 "6" 7 "7"
+label value grouping regionsmarg
+
+graph twoway (line margins1a grouping, lcolor(black%100)) ///
+             (rarea margins1uba margins1lba grouping, vert fcolor(black%20) lcolor(black%20)) ///
+             , xlabel(1"1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", valuelabel alternate) ///
+			 xtitle("NS-SEC", size(msmall)) ///
+			 ytitle("Continuing Schooling", size(msmall)) ///
+			 title("NS-SEC, AMEs", size(msmall)) ///
+			 caption("Educational Attainment, Sex, Housing Tenure, and interactions with Cohorts also included in Model.", size(vsmall)) ///
+			 note("Data Source: NCDS & BCS, N= 9134, Reference Category NS-SEC 2", size(vsmall)) ///
+			 legend(label(1 "NCDS AMEs") label(2 "NCDS AME CIs")) ///
+			 name(nssecdydxa, replace)
+			 
+			 
+			 
+replace _margin = .0977226 if (_n==1)
+replace _margin = .077439 if (_n==2)
+replace _margin = -.0061238 if (_n==3)
+replace _margin = -.1569498 if (_n==4)
+replace _margin = -.1632271 if (_n==5)
+replace _margin = -.1088084 if (_n==6)
+replace _margin = -.1071612 if (_n==7)
+
+
+gen mar1b = _margin if (n==1)
+gen mar2b = _margin if (n==2)
+gen mar3b = _margin if (n==3)
+gen mar4b = _margin if (n==4)
+gen mar5b = _margin if (n==5)
+gen mar6b = _margin if (n==6)
+gen mar7b = _margin if (n==7)
+egen margins1b = rowtotal(mar1b mar2b mar3b mar4b mar5b mar6b mar7b)
+replace margins1b=. if(margins1b==0)
+
+tab margins1b
+
+replace _ci_ub = .2403149 if (_n==1)
+replace _ci_ub = .2136167 if (_n==2)
+replace _ci_ub = .116063 if (_n==3)
+replace _ci_ub = -.0280375 if (_n==4)
+replace _ci_ub = -.0535589 if (_n==5)
+replace _ci_ub = .0122917 if (_n==6)
+replace _ci_ub = .0046623 if (_n==7)
+
+gen mar1ubb = _ci_ub if (n==1)
+gen mar2ubb = _ci_ub if (n==2)
+gen mar3ubb = _ci_ub if (n==3)
+gen mar4ubb = _ci_ub if (n==4)
+gen mar5ubb = _ci_ub if (n==5)
+gen mar6ubb = _ci_ub if (n==6)
+gen mar7ubb = _ci_ub if (n==7)
+egen margins1ubb = rowtotal(mar1ubb mar2ubb mar3ubb mar4ubb mar5ubb mar6ubb mar7ubb)
+replace margins1ubb=. if(margins1ubb==0)
+
+tab margins1ubb
+
+replace _ci_lb = -.0448696 if (_n==1)
+replace _ci_lb = -.0587387 if (_n==2)
+replace _ci_lb = -.1283107 if (_n==3)
+replace _ci_lb = -.2858622 if (_n==4)
+replace _ci_lb = -.2728953 if (_n==5)
+replace _ci_lb = -.2299085 if (_n==6)
+replace _ci_lb = -.2189847 if (_n==7)
+
+gen mar1lbb = _ci_lb if (n==1)
+gen mar2lbb = _ci_lb if (n==2)
+gen mar3lbb = _ci_lb if (n==3)
+gen mar4lbb = _ci_lb if (n==4)
+gen mar5lbb = _ci_lb if (n==5)
+gen mar6lbb = _ci_lb if (n==6)
+gen mar7lbb = _ci_lb if (n==7)
+egen margins1lbb = rowtotal(mar1lbb mar2lbb mar3lbb mar4lbb mar5lbb mar6lbb mar7lbb)
+replace margins1lbb=. if(margins1lbb==0)
+
+tab margins1lbb
+
+gen groupingb=_n if _n==1
+replace groupingb=_n if _n==2
+replace groupingb=_n if _n==3
+replace groupingb=_n if _n==4
+replace groupingb=_n if _n==5
+replace groupingb=_n if _n==6
+replace groupingb=_n if _n==7
+label variable groupingb "Class"
+label define regionsmargb 1 "1" 2 "2" 3"3" 4 "4" 5 "5" 6 "6" 7 "7"
+label value groupingb regionsmargb
+
+
+graph twoway (line margins1b groupingb, lcolor(black%100)) ///
+             (rarea margins1ubb margins1lbb groupingb, vert fcolor(black%20) lcolor(black%20)) ///
+             , xlabel(1"1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", valuelabel alternate) ///
+			 xtitle("NS-SEC", size(msmall)) ///
+			 ytitle("Continuing Schooling", size(msmall)) ///
+			 title("NS-SEC, AMEs", size(msmall)) ///
+			 caption("Educational Attainment, Sex, Housing Tenure, and interactions with Cohorts also included in Model.", size(vsmall)) ///
+			 note("Data Source: NCDS & BCS, N= 9134, Reference Category NS-SEC 2", size(vsmall)) ///
+			 legend(label(1 "BCS AMEs") label(2 "BCS AME CIs"))	///
+			 name(nssecdydxb, replace)
+
+			 
+grstyle clear
+set scheme s2color
+grstyle init
+grstyle set plain, box
+grstyle color background white
+grstyle set color Set1
+grstyle yesno draw_major_hgrid yes
+grstyle yesno draw_major_ygrid yes
+grstyle color major_grid gs8
+grstyle linepattern major_grid dot
+grstyle set legend 4, box inside
+grstyle color ci_area gs12%50
+			 
+
+graph twoway (line margins1a grouping, lcolor(black%100) lpattern(l)) || (rarea margins1uba margins1lba grouping, vert fcolor(black%20) lcolor(black%20)) || (line margins1b groupingb, lcolor(black%100) lpattern(-)) || (rarea margins1ubb margins1lbb groupingb, vert fcolor(black%20) lcolor(black%20)) ///
+             , xlabel(1"1.1" 2"1.2" 3"3" 4"4" 5"5" 6"6" 7"7", valuelabel alternate) ///
+			 legend(rows(2)) ///
+			 legend(order(1 "NCDS" 3 "BCS")) ///
+			 xtitle("NS-SEC", size(msmall)) ///
+			 ytitle("Continuing Schooling", size(msmall)) ///
+			 title("AMEs", size(msmall)) ///
+			 name(nssecdydxbcomb, replace) ///
+			 saving(nssecdydxbcomb, replace)
+			 
+
+logit econbin obin##cohort sex##cohort tenure##cohort ib(3).nssec##cohort
+
+margins cohort, at(nssec=(1 2 3 4 5 6 7 8))
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) ///
+    title("Predictive Margins", size(msmall)) ///
+    xtitle("NS-SEC", size(msmall)) ///
+    ytitle("Continuing Schooling", size(msmall)) ///
+    plot1opts(lcolor(black) lpattern("l")) ///
+	plot2opts(lcolor(black) lpattern("-")) ///
+    xlabel(1 "1.1" 2 "1.2" 3 "2" 4 "3" 5 "4" 6 "5" 7 "6" 8 "7", labsize(msmall)) ///
+	name(nssecpredcomb, replace) ///
+	saving(nssecpredcomb, replace)
+	
+	
+graph combine nssecdydxbcomb.gph nssecpredcomb.gph, ///
+title("Predictive and Average Marginal Effects of NS-SEC on Continuing Schooling by Cohorts", size(small)) ///
+caption("Educational Attainment, Sex, Housing Tenure, and interactions with Cohorts also included in Model.", size(vsmall)) ///
+note("Data Source: NCDS & BCS, N= 9134, Reference Category NS-SEC 2 for AMEs", size(vsmall)) ///
+ycommon 
+
+cd"G:\Stata data and do\Tables and Figures\Merged NCDS and BCS\Final"
+
+graph export "nsseccombcohort.png", width(6000) replace
+
+			 
+			 
+margins cohort, at(obin=(0 1))
 marginsplot
 
-margins cohort, dydx(obin) vsquish
+margins cohort, at(sex=(0 1))
+marginsplot
 
-marginsplot, yline(0)
-
-margins cohort, dydx(sex) vsquish
-
-marginsplot, yline(0)
-
-margins cohort, dydx(tenure) vsquish
-
-marginsplot, yline(0)
-
-margins cohort, dydx(nssec) vsquish
-
-marginsplot, by(cohort) yline(0)
-
-///
-margins, dydx(cohort) at(nssec=(1(1)8)) vsquish 
-
-marginsplot, yline(0)
-
-marginsplot, recast(line) recastci(rarea) yline(0)
-///
-
-margins cohort, dydx(obin) at(nssec=(1(1)8)) vsquish
-
-marginsplot, x(nssec) by(cohort) yline(0)
-
-marginsplot, recast(line) recastci(rarea) ciopts(color(gs14)) x(nssec) yline(0) ///
-             title(Differences in adjusted probabilites with 95% confidence intervals)
+margins cohort, at(tenure=(0 1))
+marginsplot			 
 			 
+			 
+			 	
+		
+
+margins cohort, atmeans 
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) ///
+    title("Predictive Margins", size(msmall)) ///
+    xtitle("Cohorts", size(msmall)) ///
+    ytitle("Continuing Schooling", size(msmall)) ///
+    plot1opts(lcolor(black) lpattern("l")) ///
+	name(cohortpredcomb, replace) ///
+	saving(cohortpredcomb, replace)
+
+		
+margins cohort, at(obin=(0 1)) vsquish
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) ///
+    title("Predictive Margins", size(msmall)) ///
+    xtitle("Educational Attainment", size(msmall)) ///
+    ytitle("Continuing Schooling", size(msmall)) ///
+    plot1opts(lcolor(black) lpattern("l")) ///
+	plot2opts(lcolor(black) lpattern("-")) ///
+    xlabel(0 "<5" 1 "≥5", labsize(msmall)) ///
+	name(obinpredcomb, replace) ///
+	saving(obinpredcomb, replace)
+	
+graph export "obincombcohort.png", width(6000) replace
+
+
+margins cohort, at(sex=(0 1)) vsquish
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) ///
+    title("Predictive Margins", size(msmall)) ///
+    xtitle("Sex", size(msmall)) ///
+    ytitle("Continuing Schooling", size(msmall)) ///
+    plot1opts(lcolor(black) lpattern("l")) ///
+	plot2opts(lcolor(black) lpattern("-")) ///
+    xlabel(0 "Female" 1 "Male", labsize(msmall)) ///
+	name(sexpredcomb, replace) ///
+	saving(sexpredcomb, replace)
+	
+graph export "sexcombcohort.png", width(6000) replace
+
+
+margins cohort, at(tenure=(0 1)) vsquish
+
+marginsplot, recast(line) ciopt(color(black%20)) recastci(rarea) ///
+    title("Predictive Margins", size(msmall)) ///
+    xtitle("Housing Tenure", size(msmall)) ///
+    ytitle("Continuing Schooling", size(msmall)) ///
+    plot1opts(lcolor(black) lpattern("l")) ///
+	plot2opts(lcolor(black) lpattern("-")) ///
+    xlabel(0 "Own Home" 1 "Don't", labsize(msmall)) ///
+	name(tenurepredcomb, replace) ///
+	saving(tenurepredcomb, replace)
+
+graph export "tenurecombcohort.png", width(6000) replace
+
+
 
 /// Why do interactions not have marginal effects? The marginal effect of a discrete explanatory variable is defined as the expected outcome difference associated with a unit change in that explanatory variable. Now, what is a unit change in, say, 2.time#1.strict? It could be a change from time = 1 (or 3) and strict = 1 to time = 2 and strict = 1. Or it could be a change from time = 2 and strict = 0 to time = 2 and strict = 1. Any of those three possibilities produces a unit change of 2.time#1.strict from 0 to 1. But those three ways of changing 2.time#1.strict will, in general, have different associated changes in the outcome. In fact, the only situation in which those three things will not have different changes in the outcome is if the outcome does not depend on time or strict! So the "marginal effect" of 2.time#1.strict is ill-defined because it could be any of three different values. (With continuous variables the situation is infinitely worse.) The same reasoning just applied to 2.time#1.strict applies similarly to any of the interactions.
 ///
-
-
-logit econbin i.obin i.sex i.tenure ib(3).nssec90 i.cohort obin##cohort sex##cohort tenure##cohort ib(3).nssec90##cohort
-
-
-logit econbin i.obin i.sex i.tenure ib(2).rgsc i.cohort obin##cohort sex##cohort tenure##cohort ib(2).rgsc##cohort
-
-logit econbin i.obin i.sex i.tenure ib(2).rgsc90 i.cohort obin##cohort sex##cohort tenure##cohort ib(2).rgsc90##cohort
-
-/// https://stats.oarc.ucla.edu/stata/faq/how-can-i-understand-a-categorical-by-continuous-interaction-stata-12/ ///
-
-logit econbin i.obin i.sex i.tenure i.cohort obin##cohort sex##cohort tenure##cohort c.camsis##cohort
-
-margins cohort, dydx(camsis)
-
-margins, at(cohort=(0 1) camsis=(15(5)90)) vsquish 
-
-margins, dydx(cohort) at(camsis=(15(5)90)) vsquish 
-
-marginsplot, yline(0)
-
-marginsplot, recast(line) recastci(rarea) yline(0)
-
-
-
-logit econbin i.obin i.sex i.tenure i.cohort obin##cohort sex##cohort tenure##cohort c.cam90##cohort
-
-
 
