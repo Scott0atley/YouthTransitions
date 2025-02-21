@@ -19,3 +19,6 @@ By using existing large-scale social survey data resources to develop new youth 
 
 There are generally considered to be three different types of 'traditional transitions'. The first is termed 'school-to-work' which is defined as 'young people first leaving school at the minimum school leaving age and immediately, and with few difficulties, getting a job' (Coles 2006 p.91). The second is termed a 'housing transition' meaning that the young person leaves the family home and sets up a place of their own. Lastly a young person underwent a 'family transition' in which form a relationship, get engaged, then married, and upon marriage leaving home to live with their spouse. All of these transitions are interconnected. School-to-work leads to the ability to leave the family home which allows for the establishment of a family of your own. 
 
+
+
+NOTE: some .do files have been redacted or currently not available. This is due to secure license restrictions. 
